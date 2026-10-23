@@ -41,7 +41,7 @@ Debian and Ubuntu installs), use that folder.
    ```sh
    mkdir -p ~/.local/share/hellforge-prefix
    STEAM_COMPAT_CLIENT_INSTALL_PATH="$HOME/.local/share/Steam" \
-   STEAM_COMPAT_DATA_PATH="$HOME/.local/share/hellforge-prefix" \
+   STEAM_COMPAT_DATA_PATH="$HOME/.local/share/hellforge-prefix" SteamGameId="${SteamGameId-553850}" \
    "$HOME/.local/share/Steam/steamapps/common/<Proton>/proton" run ~/Downloads/HellForge-Setup.exe
    ```
 
@@ -70,7 +70,8 @@ Debian and Ubuntu installs), use that folder.
    ```
 
    It finds the prefix from where the installation is, finds Steam, and picks a Proton. When there are several, it
-   prints which one it uses and the others. To choose one, put `PROTON=<path to its proton script>` before the command.
+   prints which one it uses and the others. GE-Proton in `compatibilitytools.d` is supported. To choose one, put
+   `PROTON=<path to its proton script>` before the command.
    Started with `bash`, the scripts do not need to be made executable.
 5. In HellForge, press Start setup. Setup cannot read Steam's own HELLDIVERS 2 from inside Wine, so it shows the card
    for downloading the supported build through Steam, with three `download_depot` commands
@@ -134,6 +135,29 @@ for Steam.
 
 To move it yourself, move the three `depot_*` folders from `app_553850` in Steam's folder to that `app_553850` folder in
 the prefix. Links do not work: HellForge refuses linked paths.
+
+## Native launcher (experimental)
+
+Besides running `HellForge.exe` under Proton, the launcher can run as a native Linux program (Avalonia). The launcher,
+setup and the Steam search then run natively, and only the Windows parts (the session runner and the game, the Steam
+ownership probe) run through Proton, still inside the network namespace. Nothing about the offline guarantee changes:
+`LinuxNetworkBlock.GuardSession` refuses a session outside the namespace.
+
+```sh
+bash linux/packaging/build.sh pkg        # needs a .NET 10 SDK; builds an Arch/CachyOS package
+sudo pacman -U linux/packaging/hellforge-*.pkg.tar.zst
+hellforge install                        # once: runs HellForge-Setup.exe in HellForge's own Proton prefix
+hellforge                                # starts the native launcher in the namespace
+```
+
+`hellforge install` searches Steam's Proton folders, including GE-Proton in `compatibilitytools.d`. Set
+`PROTON=<path to its proton script>` to choose a specific one.
+
+Natively, setup reads Steam's folders directly (no Z: drive, no depot move). `src/HellForge.Core/LinuxHost.cs` holds the
+Proton start, the path conversion and the Steam search. Needs `bsdtar` for `.7z` and `.rar` mods. Development:
+`HELLFORGE_DEV_SHOT=<folder>` saves a picture of the window every two seconds, `HELLFORGE_DEV_SETUP=1` and
+`HELLFORGE_DEV_PLAY=1` press Start setup or PLAY. Not tested yet: a session that reaches the game, and the ownership
+probe through Proton.
 
 ## Updating
 

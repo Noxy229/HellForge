@@ -67,7 +67,8 @@ if [ -z "${STEAM_COMPAT_DATA_PATH:-}" ]; then
 elif [ -n "$inside" ] && ! [ "$inside" -ef "$STEAM_COMPAT_DATA_PATH" ]; then
   echo "Note: the installation is in the prefix $inside, but STEAM_COMPAT_DATA_PATH is $STEAM_COMPAT_DATA_PATH." >&2
 fi
-export STEAM_COMPAT_DATA_PATH
+# GE-Proton needs a game ID when HellForge's prefix path contains no app ID.
+export STEAM_COMPAT_DATA_PATH SteamGameId="${SteamGameId-553850}"
 
 if [ -z "${PROTON:-}" ]; then
   mapfile -t protons < <(ls -d "$STEAM_COMPAT_CLIENT_INSTALL_PATH"/steamapps/common/Proton*/proton "$STEAM_COMPAT_CLIENT_INSTALL_PATH"/compatibilitytools.d/*/proton 2>/dev/null | sort -V)
@@ -95,7 +96,7 @@ fi
 # path). Setup reads it from Steam's folder inside the prefix, so offer to move it there: a rename on the same
 # filesystem, no extra space. Only for an installation inside this prefix (made there by HellForge-Setup.exe).
 # The depots are the supported build's (src/HellForge.Core/supported-build.json).
-if [ -n "$inside" ] && [ "$inside" -ef "$STEAM_COMPAT_DATA_PATH" ] && [ ! -f "$INSTALL/game/bin/helldivers2.exe" ]; then
+if [ -z "${HF_NATIVE_LAUNCHER:-}" ] && [ -n "$inside" ] && [ "$inside" -ef "$STEAM_COMPAT_DATA_PATH" ] && [ ! -f "$INSTALL/game/bin/helldivers2.exe" ]; then
   depots="553851 553853 553854"
   target="$STEAM_COMPAT_DATA_PATH/pfx/drive_c/Program Files (x86)/Steam/steamapps/content/app_553850"
   # true for a folder that holds every depot the prefix still lacks
